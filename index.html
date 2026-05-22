@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WAME | Where are my executors?</title>
+    <link rel="icon" href="icon.png" type="image/png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background-color: #0a0a0a;
+            color: #bcbcbc;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            overflow-x: hidden;
+        }
+        .interactive-element {
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0a0a0a; }
+        ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
+        
+        #particles-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+        
+        .particle {
+            position: absolute;
+            background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 70%);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+        
+        @keyframes float {
+            0% {
+                transform: translateY(0px) translateX(0px);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100vh) translateX(100px);
+                opacity: 0;
+            }
+        }
+        
+        .loader {
+            width: 35px;
+            aspect-ratio: 1;
+            --_g: no-repeat radial-gradient(farthest-side, #ffffff 94%, #0000);
+            background:
+                var(--_g) 0    0,
+                var(--_g) 100% 0,
+                var(--_g) 100% 100%,
+                var(--_g) 0    100%;
+            background-size: 40% 40%;
+            animation: l38 .5s infinite;
+        }
+        
+        @keyframes l38 {
+            100% {background-position: 100% 0, 100% 100%, 0 100%, 0 0}
+        }
+        
+        #loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: #0a0a0a;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            gap: 20px;
+            opacity: 1;
+            transition: opacity 0.8s ease-out;
+        }
+        
+        #loading-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        #loading-text {
+            color: #bcbcbc;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-size: 14px;
+            letter-spacing: 2px;
+            animation: fadeInText 0.8s ease-in 0.3s both;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        
+        @keyframes fadeInText {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes slideInCard {
+            from {
+                opacity: 0;
+                transform: translateY(40px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(40px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        header {
+            animation: slideDown 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both;
+        }
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        main {
+            animation: slideUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.25s both;
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        footer {
+            animation: fadeInBottom 0.6s ease-out 0.35s both;
+        }
+        
+        @keyframes fadeInBottom {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        body > *:not(#particles-container) {
+            position: relative;
+            z-index: 1;
+        }
+
+        #status-panel {
+            animation: slideInRight 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.4s both;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between antialiased">
+    <div id="loading-screen">
+        <div class="loader"></div>
+        <div id="loading-text">WAME | DEXDR</div>
+    </div>
+    <div id="particles-container"></div>
+
+    <header class="px-8 py-6 border-b border-zinc-900/50 bg-[#0a0a0a]/80 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-5xl mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <span class="text-white font-medium text-sm tracking-tight">WAME</span>
+            </div>
+            
+            <div class="flex items-center space-x-6">
+                <div class="flex space-x-2 text-xs font-mono">
+                    <button id="btn-en" onclick="setLanguage('en')" class="text-white font-medium border-b border-white pb-0.5 interactive-element">EN</button>
+                    <span class="text-zinc-800">|</span>
+                    <button id="btn-es" onclick="setLanguage('es')" class="text-zinc-500 hover:text-zinc-300 pb-0.5 interactive-element">ES</button>
+                </div>
+
+                <div class="flex items-center space-x-4">
+                    <a href="https://www.youtube.com/@DEXDR-SCRIPTS" target="_blank" class="text-zinc-500 hover:text-white interactive-element" aria-label="YouTube">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M2.25 8.625c0-2.327 1.886-4.213 4.213-4.213h11.074c2.327 0 4.213 1.886 4.213 4.213v6.75c0 2.327-1.886 4.213-4.213 4.213H6.463c-2.327 0-4.213-1.886-4.213-4.213v-6.75Z"/><path d="m9.75 15.75 6-3.75-6-3.75v7.5Z"/></svg>
+                    </a>
+                    <a href="https://discord.gg/UGYxShYk4k" target="_blank" class="text-zinc-500 hover:text-white interactive-element" aria-label="Discord">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M8 12a1 1 0 1 0 2 0a1 1 0 0 0 -2 0" /><path d="M14 12a1 1 0 1 0 2 0a1 1 0 0 0 -2 0" /><path d="M15.5 17c0 1 1.5 3 2 3c1.5 0 2.833 -1.667 3.5 -3c.667 -1.667 .5 -5.833 -1.5 -11.5c-1.457 -1.015 -3 -1.34 -4.5 -1.5l-.972 1.923a11.913 11.913 0 0 0 -4.053 0l-.975 -1.923c-1.5 .16 -3.043 .485 -4.5 1.5c-2 5.667 -2.167 9.833 -1.5 11.5c.667 1.333 2 3 3.5 3c.5 0 2 -2 2 -3" /><path d="M7 16.5c3.5 1 6.5 1 10 0" /></svg>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-5xl w-full mx-auto px-8 py-16 flex-grow flex flex-col justify-center">
+        <div class="mb-12">
+            <h1 id="main-title" class="text-white text-2xl font-medium tracking-tight mb-2">Where are my executors?</h1>
+            <p id="main-desc" class="text-sm text-zinc-500">Listed modules ready for independent execution.</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+            
+            <div id="downloads-list" class="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+                </div>
+
+            <div class="border border-zinc-800/80 bg-[#111111] rounded-xl p-6 font-mono text-[11px] text-zinc-500 shadow-xl shadow-black/20" id="status-panel">
+                <span id="panel-status-title" class="text-zinc-400 block mb-5 tracking-wider font-semibold">// EXPLOIT STATUS</span>
+                <ul class="space-y-4">
+                    <li class="flex justify-between items-center border-b border-zinc-900 pb-2"><span>Xeno</span> <span id="status-xeno" class="text-zinc-700">LOADING...</span></li>
+                    <li class="flex justify-between items-center border-b border-zinc-900 pb-2"><span>Luna</span> <span id="status-luna" class="text-zinc-700">LOADING...</span></li>
+                    <li class="flex justify-between items-center border-b border-zinc-900 pb-2"><span>Madium</span> <span id="status-madium" class="text-zinc-700">LOADING...</span></li>
+                    <li class="flex justify-between items-center border-b border-zinc-900 pb-2"><span>Velocity</span> <span id="status-velocity" class="text-zinc-700">LOADING...</span></li>
+                    <li class="flex justify-between items-center"><span>Solara</span> <span id="status-solara" class="text-zinc-700">LOADING...</span></li>
+                </ul>
+            </div>
+
+        </div>
+    </main>
+
+    <footer class="px-8 py-8 text-center border-t border-zinc-900/50 mt-12">
+        <p class="text-[11px] text-zinc-600 font-mono tracking-tight">&copy; 2026 WAME.</p>
+    </footer>
+
+    <script>
+        const STATUS_API_URL = "https://raw.githubusercontent.com/l8z4/dexdr-wame/main/statusjsonvrooo.json";
+
+        const translations = {
+            en: {
+                title: "Executors",
+                desc: "Direct link",
+                downloadBtn: "Download",
+                showcaseTitle: "Watch Showcase",
+                panelTitle: "EXPLOIT STATUS",
+                states: {
+                    working: "Working",
+                    detected: "Detected (Use alt account)",
+                    faulty: "Faulty (Use alt account)",
+                    downgrade: "Working with downgrade",
+                    dead: "Dead (No updates)"
+                }
+            },
+            es: {
+                title: "Executors",
+                desc: "Link directo",
+                downloadBtn: "Descargar",
+                showcaseTitle: "Ver Showcase",
+                panelTitle: "ESTADO DE EXPLOITS",
+                states: {
+                    working: "Funcionando",
+                    detected: "Detectado (Usa multicuenta)",
+                    faulty: "Con fallas (Usa multicuenta)",
+                    downgrade: "Funcionando con downgrade",
+                    dead: "Muerto (Sin updates)"
+                }
+            }
+        };
+
+        const softwareSuite = [
+            { id: "xeno", name: "Xeno", ext: ".zip", path: "files/xeno.zip", media: "https://youtu.be/IJbnxraegD8?si=72EgAAJzUHFTylq3", icon: "xeno.webp" },
+            { id: "luna", name: "Luna", ext: ".exe", path: "files/luna.exe", media: "https://youtube.com/...", icon: "luna.webp" },
+            { id: "madium", name: "Madium", ext: ".zip", path: "files/madium.zip", media: "https://youtu.be/XMu6M1iAUj8?si=uKtzhP1v_D1jhL_x", icon: "madium.webp" },
+            { id: "velocity", name: "Velocity", ext: ".zip", path: "files/velocity.zip", media: "https://youtube.com/...", icon: "velocity.webp" },
+            { id: "solara", name: "Solara", ext: ".zip", path: "files/solara.zip", media: "https://youtu.be/n38znhegIkQ?si=4ZELkNp8w1GJtECJ", icon: "solara.webp" }
+        ];
+
+        let currentLang = 'en'; 
+        let globalStatusCache = {};
+
+        function renderInterface() {
+            document.getElementById('main-title').innerText = translations[currentLang].title;
+            document.getElementById('main-desc').innerText = translations[currentLang].desc;
+            document.getElementById('panel-status-title').innerText = translations[currentLang].panelTitle;
+
+            const listContainer = document.getElementById('downloads-list');
+            listContainer.innerHTML = '';
+
+            softwareSuite.forEach((item, index) => {
+                const row = document.createElement('div');
+                
+                // Logic to make the last item span 2 columns if the total number of items is odd
+                const isLastOddItem = (softwareSuite.length % 2 !== 0) && (index === softwareSuite.length - 1);
+                const spanClass = isLastOddItem ? 'md:col-span-2' : '';
+
+                // Applied individual borders and cleaner hover effects
+                row.className = `bg-[#111111] border border-zinc-800/80 rounded-xl p-6 flex flex-col justify-between interactive-element group hover:border-zinc-700 hover:shadow-lg hover:shadow-black/40 ${spanClass}`;
+                row.style.animation = `slideInCard 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) ${0.3 + index * 0.08}s both`;
+
+                row.innerHTML = `
+                    <div class="flex justify-between items-start mb-8">
+                        <div class="flex items-center space-x-3.5">
+                            <div class="w-9 h-9 bg-[#1a1a1a] rounded flex items-center justify-center border border-zinc-800/50 group-hover:border-zinc-700 interactive-element">
+                                <img src="${item.icon}" alt="${item.name}" class="w-6 h-6 object-contain opacity-80 group-hover:opacity-100 interactive-element" onerror="this.style.display='none'">
+                            </div>
+                            <div class="flex flex-col">
+                                <h2 class="text-zinc-200 font-medium text-[15px] group-hover:text-white interactive-element tracking-wide">${item.name}</h2>
+                                <span class="text-[10px] font-mono text-zinc-500 mt-0.5">${item.ext}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center space-x-3">
+                        <a href="${item.path}" download class="flex-grow flex items-center justify-center space-x-2 border border-zinc-800/80 hover:border-zinc-600 bg-[#161616] hover:bg-[#1f1f1f] text-zinc-300 hover:text-white text-xs py-2.5 px-3 rounded-lg interactive-element shadow-sm">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17V3"/><path d="m6 11 6 6 6-6"/><path d="M19 21H5"/></svg>
+                            <span class="font-mono tracking-wider text-[11px] font-medium">${translations[currentLang].downloadBtn}</span>
+                        </a>
+                        <a href="${item.media}" target="_blank" class="p-2.5 border border-zinc-800/80 hover:border-zinc-600 bg-[#161616] hover:bg-[#1f1f1f] text-zinc-500 hover:text-zinc-300 rounded-lg interactive-element shadow-sm" title="${translations[currentLang].showcaseTitle}">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M2 8a4 4 0 0 1 4 -4h12a4 4 0 0 1 4 4v8a4 4 0 0 1 -4 4h-12a4 4 0 0 1 -4 -4v-8" /><path d="M10 9l5 3l-5 3l0 -6" /></svg>
+                        </a>
+                    </div>
+                `;
+                listContainer.appendChild(row);
+            });
+
+            applyStatusTexts();
+        }
+
+        async function fetchRemoteStatus() {
+            try {
+                const response = await fetch(STATUS_API_URL);
+                if (!response.ok) throw new Error();
+                globalStatusCache = await response.json();
+                applyStatusTexts();
+            } catch (e) {
+                console.error("Error connecting to GitHub repository.");
+                softwareSuite.forEach(item => {
+                    const el = document.getElementById(`status-${item.id}`);
+                    if (el) el.className = 'text-zinc-700 text-[10px] tracking-wide';
+                });
+            }
+        }
+
+        function applyStatusTexts() {
+            if (!globalStatusCache || Object.keys(globalStatusCache).length === 0) return;
+
+            Object.keys(globalStatusCache).forEach(id => {
+                const el = document.getElementById(`status-${id}`);
+                if (el) {
+                    const rawState = globalStatusCache[id].toLowerCase();
+                    el.innerText = translations[currentLang].states[rawState] || rawState;
+
+                    if (rawState === 'working') {
+                        el.className = 'text-emerald-400 font-medium text-right text-[10px] tracking-wider';
+                    } else if (rawState === 'detected' || rawState === 'faulty') {
+                        el.className = 'text-orange-400 font-medium text-right text-[10px] tracking-wider max-w-[140px] lg:max-w-[170px] break-words';
+                    } else if (rawState === 'downgrade') {
+                        el.className = 'text-yellow-400 font-medium text-right text-[10px] tracking-wider';
+                    } else if (rawState === 'dead') {
+                        el.className = 'text-red-500 font-medium text-right text-[10px] tracking-wider';
+                    }
+                }
+            });
+        }
+
+        function setLanguage(lang) {
+            currentLang = lang;
+            const btnEs = document.getElementById('btn-es');
+            const btnEn = document.getElementById('btn-en');
+
+            if (lang === 'es') {
+                btnEs.className = "text-white font-medium border-b border-white pb-0.5 interactive-element";
+                btnEn.className = "text-zinc-500 hover:text-zinc-300 pb-0.5 interactive-element";
+            } else {
+                btnEn.className = "text-white font-medium border-b border-white pb-0.5 interactive-element";
+                btnEs.className = "text-zinc-500 hover:text-zinc-300 pb-0.5 interactive-element";
+            }
+
+            renderInterface();
+        }
+
+        function createParticles() {
+            const container = document.getElementById('particles-container');
+            const particleCount = 100;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                
+                const size = Math.random() * 4 + 1;
+                const duration = Math.random() * 20 + 15;
+                const delay = Math.random() * 5;
+                const xStart = Math.random() * window.innerWidth;
+                const yStart = Math.random() * window.innerHeight;
+                const xOffset = (Math.random() - 0.5) * 200;
+                
+                particle.style.width = size + 'px';
+                particle.style.height = size + 'px';
+                particle.style.left = xStart + 'px';
+                particle.style.bottom = yStart + 'px';
+                particle.style.animation = `float ${duration}s linear ${delay}s infinite`;
+                particle.style.setProperty('--x-offset', xOffset + 'px');
+                
+                container.appendChild(particle);
+            }
+        }
+
+        setTimeout(createParticles, 100);
+
+        window.addEventListener('load', function() {
+            const loadingScreen = document.getElementById('loading-screen');
+            setTimeout(() => {
+                loadingScreen.classList.add('hidden');
+                setTimeout(() => {
+                    loadingScreen.style.display = 'none';
+                }, 800);
+                renderInterface();
+                fetchRemoteStatus();
+            }, 1200);
+        });
+
+        setTimeout(() => {
+            const loadingScreen = document.getElementById('loading-screen');
+            if (loadingScreen && !loadingScreen.classList.contains('hidden')) {
+                loadingScreen.classList.add('hidden');
+                setTimeout(() => {
+                    loadingScreen.style.display = 'none';
+                }, 800);
+                renderInterface();
+                fetchRemoteStatus();
+            }
+        }, 3000);
+
+        document.addEventListener('keydown', function(e) {
+            // Disable F12
+            if (e.key === 'F12') {
+                e.preventDefault();
+            }
+            // Disable Ctrl+Shift+I
+            if (e.ctrlKey && e.shiftKey && e.key === 'I') {
+                e.preventDefault();
+            }
+            // Disable Ctrl+Shift+J
+            if (e.ctrlKey && e.shiftKey && e.key === 'J') {
+                e.preventDefault();
+            }
+            // Disable Ctrl+Shift+C
+            if (e.ctrlKey && e.shiftKey && e.key === 'C') {
+                e.preventDefault();
+            }
+            // Disable Ctrl+Shift+K
+            if (e.ctrlKey && e.shiftKey && e.key === 'K') {
+                e.preventDefault();
+            }
+        });
+
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+        });
+    </script>
+</body>
+</html>
